@@ -11,8 +11,8 @@ Temos duas variáveis: i) proficiência/desempenho médio por Escola; ii) Indica
 
 A proficiência ou desempenho médio por Escola é um indicador importante do aprendizado dos alunos atendidos pela instituição. Trata-se de uma variável métrica contínua que varia na escala SAEB de 0-400. Para uma interpretação pedagógica da distribuição desta variável, consideramos os níveis de desempenho utilizadas na avaliação do Estado de São Paulo (SARESP), discutida por Soares (2018): abaixo do básico, básico, adequado e avançado. Para cada segmento da educação básica há níveis de interpretação pedagógica específicos, tal como nos quadros abaixo.
 
-![alt text:](https://github.com/victorgalcantara/SAEB_educ_inequalities_schools/graphs/blob/main/niveis_LP.png?raw=true)
-![alt text:](https://github.com/victorgalcantara/SAEB_educ_inequalities_schools/graphs/blob/main/niveis_MT.png?raw=true)
+![alt text:](https://github.com/victorgalcantara/SAEB_educ_inequalities_schools/blob/main/graphs/niveis_LP.png)
+![alt text:](https://github.com/victorgalcantara/SAEB_educ_inequalities_schools/blob/main/graphs/niveis_MT.png)
 
 ![alt text:](https://github.com/victorgalcantara/SAEB_educ_inequalities_schools/blob/main/histograms_DesempLP.png?raw=true)
 ![alt text:](https://github.com/victorgalcantara/SAEB_educ_inequalities_schools/blob/main/histograms_DesempMT.png?raw=true)
