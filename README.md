@@ -62,7 +62,7 @@ Para viabilizar a mensuração dos capitais a partir da posse dos itens consider
 O poder de discriminação dos itens que compõem o indicador de capital econômico foi calculado com base no Índice de Desenvolvimento Humano (IDH) do município em que se encontra a escola. Calculamos a diferença de posse de cada item entre os cinco municípios com maior e os cinco com menor IDH. Consideramos esta diferença como uma expressão da discriminação dos itens. Isso significa que, se a posse dos itens for igual para os municípios com alto e baixo IDH, este item tem baixo poder de discriminação. São cinco categorias de resposta para cada item, portanto, o diferencial de discriminação está entre 0 e 5.
 Formalmente, estimamos nossos indicadores por:
 
- 	\sum_{k=1}^{N} x_{i}∙∆_{discriminação}
+ 	$$\sum_{k=1}^{N} x_{i}∙∆_{discriminação}$$
 
 x_{i} = item
 ∆ = poder de discriminação do item
