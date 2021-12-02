@@ -1,5 +1,7 @@
 # Inequalities in Basic Education in Brazil
-Analysis of socioeconomic status and performance on national evaluation in elementary education. Some intuitive graphs and descriptive analysis about these variables.
+Este é o repositório dedicado ao trabalho que estou realizando no mestrado em Sociologia e Antropologia. Com o título "Oportunidades de quê?: desigualdades na aquisição de habilidades na Educação Básica", investigo o efeito da origem social sobre o aprendizado, um dos recursos importantes que configuram as oportunidades educacionais. A análise está centrada nos níveis do aluno (indivíduo) e das escolas (aglomerados) do sistema nacional de educação, no segmento fundamental. Aqui disponibilizo todos os procedimentos da pesquisa para quem tiver interesse em replicar, revisar ou usar para avançar nos estudos sobre desigualdades de oportunidades educacionais e estratificação educacional.
+
+# Escolas
 
 ## Análise da distribuição de desempenho médio condicionada ao Nível Socioeconômico médio das Escolas
 
@@ -48,3 +50,20 @@ Para analisar com maior detalhe as distâncias entre os grupos de nível socioec
 ![alt text:](https://github.com/victorgalcantara/SAEB_educ_inequalities_schools/blob/main/graphs/percentis_INSExDesempLP.png)
 
 ![alt text:](https://github.com/victorgalcantara/SAEB_educ_inequalities_schools/blob/main/graphs/percentis_INSExDesempMT.png)
+
+# Alunos
+
+Para o nível dos alunos, mobilizamos uma série de indicadores a partir do questionário contextual que preenchem junto com a avaliação nacional. Os indicadores que utilizamos são os capitais econômico e cultural - sendo o primeiro uma _proxy_ do Status Socioeconômico dos alunos -, um indicador de estrutura escolar, a identidade étnico-racial e o sexo - aqui limitado no sexo biológico informado pelo aluno.
+
+## Indicadores
+
+Para viabilizar a mensuração dos capitais a partir da posse dos itens considerados, padronizamos os itens em uma escala de 0-3, em que 0 é o extremo de não possuir nenhum item, e 3 é extremo oposto de possuir mais itens. A partir desta padronização, construímos nossos indicadores com a média de posse dos itens ponderada pelo poder de discriminação de cada item. 
+
+O poder de discriminação dos itens que compõem o indicador de capital econômico foi calculado com base no Índice de Desenvolvimento Humano (IDH) do município em que se encontra a escola. Calculamos a diferença de posse de cada item entre os cinco municípios com maior e os cinco com menor IDH. Consideramos esta diferença como uma expressão da discriminação dos itens. Isso significa que, se a posse dos itens for igual para os municípios com alto e baixo IDH, este item tem baixo poder de discriminação. São cinco categorias de resposta para cada item, portanto, o diferencial de discriminação está entre 0 e 5.
+Formalmente, estimamos nossos indicadores por:
+
+ 	\sum_{k=1}^{N} x_{i}∙∆_{discriminação}
+
+x_{i} = item
+∆ = poder de discriminação do item
+n = total de itens considerados
