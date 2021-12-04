@@ -21,7 +21,7 @@ for( i in c(2:4) ) {
   saeb[[i]] <- read_csv(paste0(wd,"SAEB/",ano[i],"/DADOS/TS_ALUNO_9EF.csv")) %>%  
     
     select(
-      ID_ESCOLA,
+      ID_ALUNO, ID_ESCOLA, ID_TURMA,
       ID_UF,ID_MUNICIPIO,
       TX_RESP_Q032, # jornal
       #TX_RESP_Q033, # livros geral
@@ -127,15 +127,37 @@ for( i in c(2:4) ) {
 
 # 2.1 Indicador de Capital Cultural -------------------------------------------
 
-# -----------------------------------------------------------------------------------------
+# Verificando missing data por item
+itens <- c("jornal","livrosLiterat","biblioteca","cinema","espetaculo","educMae","educPai")
 
+missing_itens <- data.frame("1" = rep(NA,5),"2" = rep(NA,length(ano)),"3" = rep(NA,length(ano)),"NA" = rep(NA,length(ano)) )
+missing_educ  <- data.frame("0" = rep(NA,2),"1" = rep(NA,2),"2" = rep(NA,2),"3" = rep(NA,2),
+                            "NS" = rep(NA,2),"NA" = rep(NA,2) )
+missing_i <- list(s11 = missing_itens, s13 = missing_itens, s15 = missing_itens,
+                  s17 = missing_itens, s19 = missing_itens)
+missing_e <- list(s11 = missing_educ, s13 = missing_educ, s15 = missing_educ,
+                  s17 = missing_educ, s19 = missing_educ)
+
+for(i in 2:4) { for(j in 1:5) {
+  print(i)
+  missing_i[[i]][j,] <- prop.table(table(my_saeb[[i]][,itens[j]],useNA="ifany"))
+}}
+
+for(i in 2:4) { for(j in 1:2) {
+  print(i)
+  missing_i[[i]][j,] <- prop.table(table(my_saeb[[i]][,itens[j]],useNA="ifany"))
+}}
+
+# Construção do indicador
+
+# 1. Considerando todos os itens (incluso educ mãe e pai)
 for(i in c(2:4)) {
   my_saeb[[i]] <- my_saeb[[i]] %>% mutate(., 
                                           educMae = ifelse(educMae == "NS", NA, educMae),
                                           educPai = ifelse(educPai == "NS", NA, educPai),
                                           educMae = as.numeric(educMae),
                                           educPai = as.numeric(educPai),
-                                          CC =
+                                          CC0 =
                                               ( jornal        +
                                                 livrosLiterat +
                                                 biblioteca    +
@@ -147,15 +169,73 @@ for(i in c(2:4)) {
 
   ) }
 
+# Considerando todos os itens, exCCto educ pai e mãe
+for(i in c(2:4)) {
+  my_saeb[[i]] <- my_saeb[[i]] %>% mutate(., 
+                                          CC =
+                                            ( 
+                                                jornal        +
+                                                livrosLiterat +
+                                                biblioteca    +
+                                                cinema        +
+                                                espetaculo    
+                                            ) / 5
+                                          
+  ) }
+
+# Considerando apenas itens com menor missing: biblioteca e cinema
+for(i in c(2:4)) {
+  my_saeb[[i]] <- my_saeb[[i]] %>% mutate(., 
+                                          CC2 =
+                                            ( 
+                                                biblioteca    +
+                                                cinema        +
+                                                espetaculo
+                                            ) / 3
+                                          
+  ) }
+
+# Observando distribuição das vars para definir níveis por categorias
+
+# hist
+hist(my_saeb[[2]]$CC0)
+hist(my_saeb[[2]]$CC)
+hist(my_saeb[[2]]$CC2)
+
 for(i in 2:4) {
   my_saeb[[i]] <- my_saeb[[i]] %>%  
-    mutate(CC2 = case_when(CC < 1.5                 ~ "Baixo",
-                           CC >= 1.5 & CC <= 2       ~ "Medio",
-                           CC > 2                  ~ "Alto"
+    mutate(CCcat = case_when(
+                           CC < 1.5             ~ "Baixo",
+                           CC >= 1.5 & CC <= 2  ~ "Medio",
+                           CC > 2               ~ "Alto"
+    ) )
+}
+
+for(i in 2:4) {
+  my_saeb[[i]] <- my_saeb[[i]] %>%  
+    mutate(CCcat2 = case_when(
+                             CC <  0.5            ~ "Baixo",
+                             CC >= 0.5 & CC < 1.8 ~ "Medio Baixo",
+                             CC >= 1.8 & CC < 2.4 ~ "Medio",
+                             CC >= 2.4 & CC < 2.8 ~ "Medio Alto",
+                             CC >= 2.8            ~ "Alto"
+                             
     ) )
 }
 
 # Gráfico ---------------------------------------------------------------------
+
+# Correlação entre CC e CC2
+saeb <- my_saeb[[2]] %>% na.exclude(my_saeb[[2]]$CC)
+cor(saeb$CC2,saeb$CC)
+
+data <- data.frame()
+data <- my_saeb[[2]] %>% na.exclude(my_saeb[[2]]$CC2) %>% group_by(CC2) %>% summarise(me_cc = mean(CC,na.rm=T))
+
+plot(x=data$CC2,y=data$me_cc)
+cor(data$CC2,data$me_cc)
+
+# Distribuições dos indicadores em versão métrica e categórica
 
 par(mfrow=c(1,2))
 hist(my_saeb[[2]]$CC, main = "Distribuição das médias", xlab = "Média de itens por aluno",ylab="Frequência")
@@ -177,34 +257,46 @@ barplot(fq.CC, names.arg = c("Alto","Baixo","Médio","Missing"),
         main = "Categorias",ylab = "frequency",xlab="Níveis")
 
 # Salvando as variáveis de Capital Econômico em um objeto
-# CE  = variável de 0-3
-# CE2 = variável de 0-10
-# CE3 = variável categória ordinal (Baixo,Médio,Alto)
+# CC  = variável de 0-3
+# CC2 = variável de 0-10
+# CC3 = variável categória ordinal (Baixo,Médio,Alto)
 
 n.13 = nrow(my_saeb[[2]])
 n.15 = nrow(my_saeb[[3]])
 n.17 = nrow(my_saeb[[4]]) 
 
-capitalCultural <- list(s11 = data.frame(ID_ESCOLA = rep(NA,1), ID_UF = rep(NA,1), 
-                                          CC = rep(NA,1), 
-                                          CC2 = rep(NA,1)),
-                         s13 = data.frame(ID_ESCOLA = rep(NA, n.13), ID_UF = rep(NA, n.13),ID_MUNICIPIO = rep(NA,n.13), 
-                                          CC  = rep(NA, n.13), 
-                                          CC2 = rep(NA, n.13)),
-                         s15 = data.frame(ID_ESCOLA = rep(NA,n.15), ID_UF = rep(NA,n.15),ID_MUNICIPIO = rep(NA,n.15), 
-                                          CC  = rep(NA,n.15), 
-                                          CC2 = rep(NA,n.15)),
-                         s17 = data.frame(ID_ESCOLA = rep(NA,n.17), ID_UF = rep(NA,n.17),ID_MUNICIPIO = rep(NA,n.17), 
-                                          CC  = rep(NA,n.17), 
-                                          CC2 = rep(NA,n.17) ) )
+capitalCultural <- list(s11 = data.frame(ID_ALUNO = rep(NA,1), ID_UF = rep(NA,1), 
+                                         CC0 = rep(NA,1),CC = rep(NA,1), CCcat = rep(NA,1),
+                                          CC2 = rep(NA,1),CCcat2 = rep(NA,1)
+),
+s13 = data.frame(ID_ALUNO = rep(NA,n.13), ID_ESCOLA = rep(NA, n.13),
+                 ID_UF = rep(NA, n.13),ID_MUNICIPIO = rep(NA, n.13),
+                 CC0 = rep(NA,n.13),CC  = rep(NA, n.13), CCcat = rep(NA,n.13),
+                 CC2 = rep(NA, n.13), CCcat2 = rep(NA,n.13)
+),
+s15 = data.frame(ID_ALUNO = rep(NA,n.15),ID_ESCOLA = rep(NA,n.15), 
+                 ID_UF = rep(NA,n.15),ID_MUNICIPIO = rep(NA, n.15), 
+                 CC0 = rep(NA,n.15),CC  = rep(NA,n.15),CCcat = rep(NA,n.15),
+                 CC2 = rep(NA,n.15),CCcat2 = rep(NA,n.15)
+),
+s17 = data.frame(ID_ALUNO = rep(NA,n.17), ID_ESCOLA = rep(NA,n.17), 
+                 ID_UF = rep(NA,n.17),ID_MUNICIPIO = rep(NA, n.17), 
+                 CC0 = rep(NA,n.17),CC  = rep(NA,n.17),CCcat = rep(NA,n.17),
+                 CC2 = rep(NA,n.17),CCcat2 = rep(NA,n.17) 
+) )
 
 for(i in 2:4) {
+  capitalCultural[[i]]$ID_ALUNO          <- my_saeb[[i]]$ID_ALUNO
   capitalCultural[[i]]$ID_ESCOLA         <- my_saeb[[i]]$ID_ESCOLA
   capitalCultural[[i]]$ID_UF             <- my_saeb[[i]]$ID_UF
   capitalCultural[[i]]$ID_MUNICIPIO      <- my_saeb[[i]]$ID_MUNICIPIO
-  capitalCultural[[i]]$CC   <- my_saeb[[i]]$CC
-  capitalCultural[[i]]$CC2  <- my_saeb[[i]]$CC2
+  
+  capitalCultural[[i]]$CC0    <- my_saeb[[i]]$CC0
+  capitalCultural[[i]]$CC     <- my_saeb[[i]]$CC
+  capitalCultural[[i]]$CC2    <- my_saeb[[i]]$CC2
+  capitalCultural[[i]]$CCcat  <- my_saeb[[i]]$CCcat
+  capitalCultural[[i]]$CCcat2 <- my_saeb[[i]]$CCcat2
 }
 
-setwd("E:/VGA/dados/")
+setwd("E:/VGA/dados/") # Diretório onde vai salvar o arquivo
 save(x = capitalCultural, file = "capitalCultural.RDS")
