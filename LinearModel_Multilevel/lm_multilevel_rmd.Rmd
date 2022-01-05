@@ -1,0 +1,13 @@
+---
+title: "lmer_multilevel"
+author: "Victor G Alcantara"
+date: "04/01/2022"
+output: html_document
+---
+
+# Regressão linear com modelos hierárquicos ou multiníveis
+
+Há casos em que os indivíduos são agrupados (clusterizados) e, portanto, estão associados (o que fere o pressuposto da independência). Nestes casos, é necessário o uso de técnicas que ponderem os efeitos entre os agrupamentos (clusters). Este é o caso dos dados educacionais, nos quais os alunos estão associados às turmas, às escolas, às associações/clubes, às redes/sistemas de educação, aos distritos, etc.
+
+P é uma medida de proporção de variação na variável dependente que ocorre entre os grupos (_between_) _versus_ a variação dentre os grupos (_within_).
+
