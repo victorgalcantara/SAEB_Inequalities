@@ -1,0 +1,143 @@
+---
+title: "Taxa de Matrícula Líquida pela PNAD-c"
+author: "Victor Alcantara"
+date: "14/05/2021"
+output:
+  word_document: default
+  pdf_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+As informações sobre o acesso à escolarização formal, sintetizado nas taxas de atendimento escolar (jovens matriculados em qualquer nível de ensino), taxa de matrícula bruta (proporção de jovens matriculados em determinado nível de ensino) e taxa de matrícula líquida (proporção de jovens matriculados em idade adequada) são levantadas pelas pesquisas demográficas (censo e amostras).
+
+Neste script calcularemos a TML para os segmentos fundamentais, médio e superior da Educação Básica com base na PNAD-c. Como se trata de uma amostra complexa, obtemos a proporção considerando os pesos amostrais e calculamos uma margem de erro para a estimativa populacional.
+
+As proporções fazem parte das estatísticas descritivas não-viesadas que representam a população, e a dimensão das amostras na PNAD-c, que é relativamente grande, torna as estatísticas mais precisas.
+
+```{r, warning = FALSE, message = FALSE}
+# 0. Packages and setup -------------------------------------------
+
+library(PNADcIBGE) # Para importar dados da Pnad contínua
+library(tidyverse) # Para organizar e analisar os dados
+library(Hmisc)     # Para análises com peso amostral
+library(weights)   #
+library(ggplot2)   # Para gráficos
+library(ggExtra)   # Para funções extra do ggplot
+library(rio)       # R Imput Output
+require(fst)       # FST é requisito para o RIO salvar nesse formato
+```
+
+# 1. Selecionando variáveis e filtrando casos
+# verbos select e filter
+
+1. (V2009)  Idade do morador na data de referência
+2. (V3006)  Série/ano que frequenta
+2. (V3003A)  Segmento do EF que frequenta
+2. (VD3005) Anos de estudo (pessoas de 5 anos ou mais de idade) padronizado para o Ensino fundamental com duração de 9 anos
+3. (VD4016) Rendimento mensal habitual do trabalho principal para pessoas de 14 anos ou mais de idade (apenas para pessoas que receberam em dinheiro, produtos ou mercadorias no trabalho principal)
+4. (V1027)  Peso do domicílio e das pessoas (Peso trimestral com correção de não entrevista com pós estratificação pela projeção de população)
+5. (V4010) Código da Ocupação
+```{r, warning=FALSE}
+wd <- ("C:/Users/VictorGabriel/Documents/00_dados/PNAD/")
+
+data <- import(paste0(wd, 2019, "/pnadc_", 2019,"-1q.fst")) 
+
+mydata <- data %>% 
+               select(V2009, VD3005,V3006,V3003A,
+                      VD4016,V1027,V4010) %>% 
+  
+               rename(.,  idade        = V2009,
+                          escolaridade = VD3005,
+                          ano_escolar  = V3006,
+                          seg_escolar  = V3003A,
+                          renda        = VD4016,
+                          peso         = V1027) 
+
+mydata <- data %>%
+                filter(renda >= 0,                
+                       idade %in% 18:65)
+```
+
+Taxa de matrícula líquida (proporção de jovens matriculados em idade adequada)
+
+```{r}
+# EF (6-14)
+mydata$ano_escolar <- as.numeric(mydata$ano_escolar)
+
+t.EF <- mydata %>% filter(idade %in% 6:14) %>% summarise( count(.,seg_escolar,wt=peso)
+) %>% mutate(.,
+                  tml = n/sum(.$n))
+
+# EM (15-17)
+t.EM <- mydata %>% filter(idade %in% 15:17) %>% summarise( count(.,seg_escolar,wt=peso)
+) %>% mutate(.,
+                  tml = n/sum(.$n))
+
+# ES (18-24)
+t.ES <- mydata %>% filter(idade %in% 18:24) %>% summarise( count(.,seg_escolar,wt=peso)
+) %>% mutate(.,
+                  tml = n/sum(.$n))
+```
+
+Inferência da proporção populacional com base na amostra da PNAD.
+
+```{r}
+# 1. Proporções observadas na amostra
+
+d.EF <- t.EF %>% mutate(.,
+                     situ = ifelse(
+ seg_escolar == "Regular do ensino fundamental" | 
+ seg_escolar == "Regular do ensino médio",
+ "adequado","inadequado")
+                   ) %>% group_by(situ) %>% summarise( 
+                     tm = sum(tml),
+                     n  = sum(n))
+
+d.EM <- t.EM %>% mutate(.,
+                     situ = ifelse(
+  seg_escolar == "Regular do ensino médio" | 
+  seg_escolar == "Educação de jovens e adultos (EJA) do ensino médio" |
+  seg_escolar == "Superior - graduação",
+  "adequado", "inadequado")
+                   ) %>% group_by(situ) %>% summarise( 
+                     tm = sum(tml),
+                     n  = sum(n))
+
+d.ES <- t.ES %>% mutate(.,
+                     situ = ifelse(
+  seg_escolar == "Superior - graduação" |
+  seg_escolar == "Mestrado" |
+  seg_escolar == "Doutorado" |
+  seg_escolar == "Especialização de nível superior",
+  "adequado","inadequado")
+                   ) %>% group_by(situ) %>% summarise( 
+                     tm=sum(tml),
+                     n  = sum(n)
+                     )
+
+# 2. Margem de erro
+# EF
+alpha = 1.96
+p = d.EF$tm[1]
+q = 1 - d.EF$tm[1]
+n =  mydata %>% filter(idade %in% 6:14) %>% nrow()
+
+ME = alpha * sqrt(p * q / n )
+
+# 2. Margem de erro
+# EM
+p = d.EM$tm[1]
+q = 1 - d.EM$tm[1]
+n =  mydata %>% filter(idade %in% 15:17) %>% nrow()
+
+ME = alpha * sqrt(p * q / n )
+
+# 2. Margem de erro
+p = d.ES$tm[1]
+q = 1 - d.ES$tm[1]
+n =  mydata %>% filter(idade %in% 18:24) %>% nrow()
+
+ME = alpha * sqrt(p * q / n )
+```
+
